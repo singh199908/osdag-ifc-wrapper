@@ -1,0 +1,83 @@
+\documentclass[11pt, letterpaper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+
+% Custom Colors
+\definecolor{primary}{RGB}{0, 51, 102}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+
+% Formatting
+\titleformat{\section}{\large\bfseries\color{primary}}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
+
+\begin{document}
+
+% Title
+\begin{center}
+    {\huge \textbf{Osdag IFC Wrapper - Methodology Report}} \\
+    \vspace{5pt}
+    \textbf{Internship Screening Task Submission} \\
+    \vspace{5pt}
+    Akshat Grover $|$ VIT Bhopal \\
+    \href{https://github.com/singh199908/osdag-ifc-wrapper}{github.com/singh199908/osdag-ifc-wrapper}
+\end{center}
+
+\vspace{10pt}
+
+\section{Introduction}
+This report details the development of an IFC (Industry Foundation Classes) wrapper for Osdag, an open-source steel design software. The utility provides a bridge between PythonOCC topological shapes and the BIM ecosystem, enabling seamless export of 3D structural models.
+
+\section{Methodology}
+
+\subsection{Architectural Approach}
+The core objective was to create a non-intrusive hook into Osdag's existing CAD generation logic. The wrapper accepts a dictionary of component names and their corresponding \texttt{TopoDS\_Shape} objects. This allows any Osdag module (e.g., Beam-to-Column End Plate, Tension Member) to use the wrapper with minimal changes to the source code.
+
+\subsection{Geometric Extraction Strategy}
+A significant challenge was the lack of reliable high-level IFC serialization in standard PythonOCC environments. To solve this, I developed a \textbf{Manual Triangulation Engine}:
+\begin{enumerate}
+    \item \textbf{Meshing:} Using \texttt{BRepMesh\_IncrementalMesh}, the topological shapes are converted into a discrete triangular mesh.
+    \item \textbf{Data Recovery:} The engine iterates through the faces of the shape, extracting nodes and triangles while respecting local coordinate transformations.
+    \item \textbf{BIM Reconstruction:} The extracted data is then mapped to \texttt{IfcFacetedBrep} entities within an IFC4 schema using \texttt{IfcOpenShell}.
+\end{enumerate}
+
+\subsection{Semantic Mapping}
+To ensure the exported models are functional in BIM software (like BIMvision or Revit), a semantic inference engine classifies Osdag components into standard IFC classes:
+\begin{itemize}
+    \item Beams $\rightarrow$ \texttt{IfcBeam}
+    \item Columns $\rightarrow$ \texttt{IfcColumn}
+    \item Plates/Gussets $\rightarrow$ \texttt{IfcPlate}
+    \item Bolts $\rightarrow$ \texttt{IfcMechanicalFastener}
+\end{itemize}
+
+\section{Challenges Faced}
+
+\subsection{Library Version Discrepancies}
+Standard builds of \texttt{IfcOpenShell-Python} often lack the \texttt{geom} serialize/deserialize hooks.
+\textbf{Solution:} Developing a low-level triangulation bridge bypassed these dependencies, ensuring the wrapper works with a basic \texttt{pip install ifcopenshell}.
+
+\subsection{BIM Viewer Visibility}
+Initial exports were empty due to missing spatial context.
+\textbf{Solution:} Explicitly defining an \texttt{IfcGeometricRepresentationContext} and linking it to the \texttt{IfcProject} corrected the camera extents and visibility in third-party viewers.
+
+\section{References}
+\begin{enumerate}
+    \item Osdag Developer Documentation: \href{https://osdag.fossee.in/}{https://osdag.fossee.in/}
+    \item IfcOpenShell-Python Official API: \href{https://ifcopenshell.github.io/}{https://ifcopenshell.github.io/}
+    \item pythonOCC Data Exchange Demos: \href{https://github.com/tpaviot/pythonocc-demos}{https://github.com/tpaviot/pythonocc-demos}
+    \item buildingSMART IFC4 Schema Specifications.
+\end{enumerate}
+
+\end{document}
