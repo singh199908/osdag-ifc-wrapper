@@ -1,0 +1,10 @@
+# Git Ignore for Osdag IFC Wrapper
+osdag_ifc_wrapper.zip
+keys*
+id_github*
+*.ifc
+__pycache__/
+.vscode/
+.idea/
+*.pdf
+# Avoid pushing the local environment specific files if any
